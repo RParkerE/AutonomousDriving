@@ -215,12 +215,10 @@ class DQNAgent:
 		minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
 
 		current_states = np.array([transition[0] for transition in minibatch]) / 255
-		with self.graph.as_default():
-			current_qs_list = self.model.predict(current_states, PREDICTION_BATCH_SIZE)
+		current_qs_list = self.model.predict(current_states, PREDICTION_BATCH_SIZE)
 
 		new_current_states = np.array([transition[3] for transition in minibatch]) / 255
-		with self.graph.as_default():
-			future_qs_list = self.target_model.predict(new_current_states, PREDICTION_BATCH_SIZE)
+		future_qs_list = self.target_model.predict(new_current_states, PREDICTION_BATCH_SIZE)
 
 		X = []
 		y = []

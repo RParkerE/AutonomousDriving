@@ -155,7 +155,7 @@ class LaneDetect:
 	def color_thresh(self, img, s_thresh=(170,255), l_thresh=(30,255)):
 		img = np.copy(img)
 		
-		hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float64)
+		hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float32)
 		l_channel = hls[:,:,1]
 		s_channel = hls[:,:,2]
 
@@ -167,7 +167,7 @@ class LaneDetect:
 	def color_gradient_thresh(self, img, s_thresh=(170,255), l_thresh=(30,255), sx_thresh=(65,100)):
 		img = np.copy(img)
 
-		hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float64)
+		hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float32)
 		l_channel = hls[:,:,1]
 		s_channel = hls[:,:,2]
 
@@ -180,6 +180,18 @@ class LaneDetect:
 
 		return color_gradient_binary
 
+	def color_filter(self, img):
+		hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+		lowerYellow = np.array([18,94,140])
+		upperYellow = np.array([48,255,255])
+		lowerWhite = np.array([0, 0, 200])
+		upperWhite = np.array([255, 255, 255])
+		maskedWhite= cv2.inRange(hsv,lowerWhite,upperWhite)
+		maskedYellow = cv2.inRange(hsv, lowerYellow, upperYellow)
+		combinedImage = cv2.bitwise_or(maskedWhite,maskedYellow)
+		
+		return combinedImage
+
 	def perspective_transform(self, img, mtx, dist, isColor=True):
 		undist = cv2.undistort(img, mtx, dist, None, mtx)
 
@@ -188,18 +200,27 @@ class LaneDetect:
 		else:
 			gray = undist
 
-		xoffset = 0
-		yoffset = 0
-		img_size = (undist.shape[1], undist.shape[0])
+		kernel = np.ones((5,5))
+		blur = cv2.GaussianBlur(gray, (5, 5), 0)
+		canny = cv2.Canny(np.uint8(blur), 50, 100)
 
+		dial = cv2.dilate(canny,kernel,iterations=1)
+		erode = cv2.erode(dial,kernel,iterations=1)
+
+		color = self.color_filter(cv2.cvtColor(np.uint8(img), cv2.COLOR_GRAY2BGR))
+		combined = cv2.bitwise_or(color, erode)
+
+		dst_size=(1280, 720)
+		src=np.float32([(0.43,0.65),(0.58,0.65),(0.1,1),(1,1)])
+		dst=np.float32([(0,0), (1, 0), (0,1), (1,1)])
+
+		img_size = np.float32([(combined.shape[1], combined.shape[0])])
 		#TODO: Use computer vision using HOUGH LINES to get bounding box
-		src = np.float32([(600,450), (730,450), (1150,700), (170,700)])
-		dst = np.float32([[xoffset,yoffset], [img_size[0]-xoffset, yoffset],
-						  [img_size[0]-xoffset, img_size[1]-yoffset],
-						  [xoffset, img_size[1]-yoffset]])
+		src = src * img_size
+		dst = dst * np.float32(dst_size)
 
 		M = cv2.getPerspectiveTransform(src, dst)
-		warped = cv2.warpPerspective(undist, M, img_size)
+		warped = cv2.warpPerspective(combined, M, dst_size)
 
 		return warped, M
 

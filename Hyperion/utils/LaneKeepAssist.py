@@ -14,7 +14,8 @@ class LKA:
 	def lane_detect(self, frame):
 		left_fit, right_fit, left_fit_m, right_fit_m, _, _, _, _, _ = self.findLines(frame)
 		output = self.drawLine(frame, left_fit, right_fit)
-		cv2.imwrite("lane.jpg", output)
+		# cv2.imwrite(f".\\tmp\\{time.localtime()}.jpg", output)
+		return output
 
 	def undistortAndHLS(self, image):
 		"""
@@ -187,4 +188,4 @@ class LKA:
 	    
 	    # Warp the blank back to original image space using inverse perspective matrix (Minv)
 	    newwarp = cv2.warpPerspective(color_warp, self.Minv, (img.shape[1], img.shape[0])) 
-	    return cv2.addWeighted(img, 1, newwarp, 0.3, 0)
+	    return cv2.addWeighted(img, 1, newwarp, 0.3, 0) 

@@ -14,10 +14,10 @@ class EKF:
 
 		self.g = np.array([0, 0, -9.81]).reshape(3, 1)
 
-		self.var_imu_acc = 0.01
-		self.var_imu_gyro = 0.01
+		self.var_imu_acc = 5e-5
+		self.var_imu_gyro = 5e-5
 
-		self.var_gnss = np.eye(3) * 100
+		self.var_gnss = np.eye(3) * 5e-5
 
 		self.var_lidar = 0.25
 
@@ -34,7 +34,7 @@ class EKF:
 	def is_initialized(self):
 		return self.initialized
 
-	def initialize_with_gnss(self, gnss, num_samples=1):
+	def initialize_with_gnss(self, gnss, num_samples=5):
 		if self.gnss_init_xyz is None:
 			self.gnss_init_xyz = np.array([gnss["x"], gnss["y"], gnss["z"]])
 		else:
